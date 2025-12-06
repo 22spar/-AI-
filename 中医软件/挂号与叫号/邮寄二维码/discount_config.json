@@ -1,0 +1,12 @@
+{
+  "version": "1.0",
+  "default_discount": 0,
+  "rules": [
+    {
+      "name": "子母件优惠",
+      "type": "fixed",
+      "discount": 10.0,
+      "threshold": 10.0
+    }
+  ]
+}

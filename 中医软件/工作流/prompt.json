@@ -1,0 +1,3 @@
+{
+    "prompt_template": "你是一名{academic_school}的中医师，\n根据以下患者的症状、脉象和舌象，根据自己的中医流派知识生成诊疗方案：\n患者姓名：{name}\n年龄：{age}\n性别：{gender}\n主诉：{chief_complaint}\n现病史：{current_medical_history}\n主要症状：{symptoms}\n脉象：{pulse}\n舌象：{tongue}\n请按照以下格式返回结果：\n【六经辨证】\n【脏腑辨证】\n【方剂名称】\n【处方】\n【煎服法】\n【注意事项】(分点分条)\n"
+}

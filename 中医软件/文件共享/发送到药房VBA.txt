@@ -1,0 +1,110 @@
+Sub Send_to_the_pharmacy()
+    On Error GoTo ErrorHandler
+    Dim targetPath As String, dateFolder As String
+    Dim sourcePath As String, newFilePath As String
+    Dim mailingStatus As VbMsgBoxResult
+    Dim fso As Object, folder As Object
+    Dim fileCounter As Integer, maxNum As Integer
+    Dim fileName As String, baseName As String, extName As String
+    
+    ' 初始化路径参数
+    targetPath = "D:\Anzhuangbao\AI中医诊疗软件 V12.6\文件共享\药房\"
+    dateFolder = Format(Now, "YYYYMMDD") ' 使用系统当前日期 [[System]]
+    
+    ' 检查文档保存状态
+    If ActiveDocument.Path = "" Then
+        MsgBox "请先保存当前文档！", vbExclamation, "未保存文档"
+        Exit Sub
+    Else
+        ActiveDocument.Save
+        sourcePath = ActiveDocument.FullName
+    End If
+    
+    ' 创建FSO对象并修复路径格式
+    Set fso = CreateObject("Scripting.FileSystemObject")
+    If Right(targetPath, 1) <> "\" Then targetPath = targetPath & "\"
+    If Not fso.FolderExists(targetPath & dateFolder) Then
+        fso.CreateFolder (targetPath & dateFolder)
+    End If
+    
+    ' 查找当前最大序号
+    maxNum = 0
+    For Each folder In fso.GetFolder(targetPath & dateFolder).Files
+        fileName = fso.GetFileName(folder)
+        If Left(fileName, 3) Like "###" And IsNumeric(Left(fileName, 3)) Then
+            fileCounter = CInt(Left(fileName, 3))
+            If fileCounter > maxNum Then maxNum = fileCounter
+        End If
+    Next
+    
+    ' 提取源文件信息并生成新文件名 [[6]]
+    fileName = fso.GetFileName(sourcePath)
+    extName = fso.GetExtensionName(sourcePath)
+    baseName = Replace(fileName, "." & extName, "")
+    
+    newFileName = Format(maxNum + 1, "000") & "_" & baseName ' 序号前缀
+    mailingStatus = MsgBox("当前患者的药品是否需要邮寄？", vbQuestion + vbYesNo, "邮寄确认")
+    newFileName = newFileName & IIf(mailingStatus = vbYes, "_邮寄", "_不邮寄") ' 邮寄后缀
+    
+    ' 构建完整目标路径
+    newFilePath = targetPath & dateFolder & "\" & newFileName & "." & extName
+    
+    ' 执行文件复制操作 [[6]]
+    If fso.FileExists(newFilePath) Then fso.DeleteFile newFilePath, True
+    fso.CopyFile sourcePath, newFilePath, True
+    
+    ' 清理资源并提示完成
+    Set fso = Nothing
+    Set folder = Nothing
+    
+    MsgBox "文件已保存为：" & vbNewLine & newFilePath, vbInformation, "操作成功"
+    Exit Sub
+
+ErrorHandler:
+    Select Case Err.Number
+        Case 70
+            MsgBox "权限拒绝！请检查：" & vbNewLine & _
+                   "1. 目标文件夹写入权限" & vbNewLine & _
+                   "2. 文件是否被占用" & vbNewLine & _
+                   "3. 杀毒软件拦截", vbCritical, "错误 70"
+        Case Else
+            MsgBox "错误 " & Err.Number & ": " & Err.Description, vbCritical
+    End Select
+End Sub
+
+Sub AddGlobalMacroButton()
+    On Error GoTo ErrorHandler
+    
+    Dim ctrl As Object
+    Set ctrl = Application.CommandBars(1).Controls.Add(msoControlButton)
+    
+    With ctrl
+        .Caption = "发送到药房"     ' 按钮显示名称
+        .OnAction = "Send_to_the_pharmacy"    ' 替换为实际的宏名
+        .Style = msoButtonIconAndCaption
+        .FaceId = 487              ' 齿轮图标
+    End With
+
+    MsgBox "按钮【发送到药房】已成功添加到工具栏！", vbInformation, "操作成功"
+    Exit Sub
+
+ErrorHandler:
+    MsgBox "添加按钮失败，请确保没有重复名称或检查宏名是否正确。", vbCritical, "错误"
+End Sub
+
+
+
+Sub DeleteCustomButton()
+    On Error Resume Next
+    Dim ctrlName As String
+    ctrlName = "发送到药房"   ' 替换为你实际使用的按钮名称
+
+    Application.CommandBars(1).Controls(ctrlName).Delete
+
+    If Err.Number = 0 Then
+        MsgBox "按钮【" & ctrlName & "】已成功删除！", vbInformation, "操作成功"
+    Else
+        MsgBox "未找到按钮【" & ctrlName & "】，可能已被删除或不存在。", vbExclamation, "提示"
+    End If
+End Sub
+
